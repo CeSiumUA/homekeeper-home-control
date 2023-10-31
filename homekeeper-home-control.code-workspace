@@ -4,5 +4,16 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"cSpell.words": [
+			"dailyevents",
+			"HOMEKEEPER",
+			"levelname",
+			"MQTT",
+			"mqttmodule",
+			"paho",
+			"pymongo",
+			"userdata"
+		]
+	}
 }

@@ -21,21 +21,24 @@ class MongoDbAccess:
             return None
         return self.__client[db_name]
     
-    def __get_states_collection(self):
+    def __get_devices_collection(self):
         db = self.__get_database()
         if db is None:
             return None
-        collection_name = Env.get_mongo_states_coll_name()
+        collection_name = Env.get_mongo_devices_coll_name()
         if collection_name is None:
             return None
         return db[collection_name]
 
     def get_timings(self):
-        states_collection = self.__get_states_collection()
-        if states_collection is None:
+        devices_collection = self.__get_devices_collection()
+        if devices_collection is None:
             return None
-        return states_collection.find({})
+        return devices_collection.find({})
     
     def update_bedtime(self, is_bed_time: bool):
-        states_collection = self.__get_states_collection()
+        devices_collection = self.__get_devices_collection()
         
+    def get_devices(self):
+        devices_collection = self.__get_devices_collection()
+        return devices_collection.find({}, {'device_name': 1})

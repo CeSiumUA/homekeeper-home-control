@@ -7,7 +7,7 @@ class Env:
     MQTT_PASSWORD = "MQTT_PASSWORD"
     MONGO_URL = "MONGO_URL"
     MONGO_HOMEKEEPER_DB = "MONGO_HOMEKEEPER_DB"
-    MONGO_STATES_COLL = "MONGO_STATES_COLL"
+    MONGO_DEVICES_COLL = "MONGO_DEVICES_COLL"
 
     def get_mqtt_connection_params():
         broker_host = environ.get(Env.MQTT_HOST)
@@ -29,5 +29,5 @@ class Env:
     def get_mongo_db_name():
         return environ.get(Env.MONGO_HOMEKEEPER_DB)
     
-    def get_mongo_states_coll_name():
-        return environ.get(Env.MONGO_STATES_COLL)
+    def get_mongo_devices_coll_name():
+        return environ.get(Env.MONGO_DEVICES_COLL)

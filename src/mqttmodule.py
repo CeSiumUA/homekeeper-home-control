@@ -27,3 +27,8 @@ def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str 
         MQTT_CLIENT_INSTANCE.username_pw_set(broker_username, broker_password)
     MQTT_CLIENT_INSTANCE.connect(broker_host, broker_port)
     MQTT_CLIENT_INSTANCE.loop_start()
+
+def subscribe_to_device(device_name: str, qos: int = 2):
+    topic_name = topics.get_tasmota_stat_result_topic(device=device_name)
+    MQTT_CLIENT_INSTANCE.subscribe(topic=topic_name, qos=qos)
+    MQTT_CLIENT_INSTANCE.message_callback_add(topic_name, __on_message)

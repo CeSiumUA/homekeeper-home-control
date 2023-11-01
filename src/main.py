@@ -18,7 +18,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
 
     with MongoDbAccess() as mongo_client:
-        for device_set in mongo_client.get_devices():
+        for device_set in mongo_client.get_devices_names():
             device_name = device_set[MongoDbAccess.DEVICE_NAME_FIELD]
             mqttmodule.subscribe_to_device(device_name=device_name)
             logging.info(f"subscribed to device: {device_name}")

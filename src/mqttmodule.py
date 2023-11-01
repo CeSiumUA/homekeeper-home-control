@@ -6,12 +6,29 @@ from dailyevents import DailyEvent
 from env import Env
 from dbaccess import MongoDbAccess
 import json
+import devices
 
 def __on_mqtt_connect(client, userdata, flags, rc):
     if rc == 0:
         logging.info("Connected to MQTT")
     else:
         logging.fatal("Failed to connect to MQTT, return code: %d\n", rc)
+
+def __device_connect_disconnect(client: mqtt_client.Client, userdata, msg):
+    payload = msg.payload.decode()
+    mobile_device_name = payload['mobile_device']
+    state = bool(payload['state'])
+
+    logging.info(f"device {mobile_device_name}, state: {state}")
+
+    devices.device_connect_disconnect_handler(mobile_device_name=mobile_device_name, is_connected=state)
+
+def __timing_event(client: mqtt_client.Client, userdata, msg):
+    event = DailyEvent(msg.payload.decode())
+
+    logging.info(f"timing event: {event.name}")
+
+    devices.time_event_handler(event)
 
 def __on_device_result_message(client: mqtt_client.Client, userdata, msg):
     segments = msg.topic.split('/')
@@ -38,6 +55,13 @@ def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str 
     if broker_username is not None:
         MQTT_CLIENT_INSTANCE.username_pw_set(broker_username, broker_password)
     MQTT_CLIENT_INSTANCE.connect(broker_host, broker_port)
+
+    MQTT_CLIENT_INSTANCE.subscribe(topic=topics.DEVICE_CONNECT_DISCONNECT, qos=2)
+    MQTT_CLIENT_INSTANCE.message_callback_add(topics.DEVICE_CONNECT_DISCONNECT, __device_connect_disconnect)
+
+    MQTT_CLIENT_INSTANCE.subscribe(topic=topics.TIMING_EVENT, qos=2)
+    MQTT_CLIENT_INSTANCE.message_callback_add(topics.TIMING_EVENT, __timing_event)
+
     MQTT_CLIENT_INSTANCE.loop_start()
 
 def subscribe_to_device(device_name: str, qos: int = 2):

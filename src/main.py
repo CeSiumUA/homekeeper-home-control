@@ -15,4 +15,9 @@ if __name__ == '__main__':
 
     with MongoDbAccess() as mongo_client:
         for device_set in mongo_client.get_devices():
-            mqttmodule.subscribe_to_device(device_name=device_set['device_name'])
+            device_name = device_set[MongoDbAccess.DEVICE_NAME_FIELD]
+            mqttmodule.subscribe_to_device(device_name=device_name)
+            logging.info(f"subscribed to device: {device_name}")
+            mqttmodule.get_device_stat(device_name=device_name)
+
+    _ = input('Type anything to exit...')

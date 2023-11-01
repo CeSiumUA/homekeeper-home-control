@@ -4,6 +4,8 @@ import topics
 import random
 from dailyevents import DailyEvent
 from env import Env
+from dbaccess import MongoDbAccess
+import json
 
 def __on_mqtt_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -11,9 +13,20 @@ def __on_mqtt_connect(client, userdata, flags, rc):
     else:
         logging.fatal("Failed to connect to MQTT, return code: %d\n", rc)
 
-def __on_message(client: mqtt_client.Client, userdata, msg):
-    logging.info(f'userdata: {userdata}')
-    logging.info(f'message: {msg.payload.decode()}')
+def __on_device_result_message(client: mqtt_client.Client, userdata, msg):
+    segments = msg.topic.split('/')
+    if len(segments) != 3:
+        logging.error("topic segments are not equal to 3...")
+    device_name = segments[1]
+
+    payload = msg.payload.decode()
+    stat_json = json.loads(payload)
+    is_power_on = True if stat_json["POWER"] == "ON" else False
+
+    logging.info(f"got device state on topic: {msg.topic}, is power on: {is_power_on}, device name: {device_name}")
+
+    with MongoDbAccess() as mongo_client:
+        mongo_client.update_device_stat(device_name=device_name, power_on=is_power_on)
 
 def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str | None = None, broker_password: str | None = None):
     global MQTT_CLIENT_INSTANCE
@@ -22,7 +35,6 @@ def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str 
 
     MQTT_CLIENT_INSTANCE = mqtt_client.Client(client_id=client_id)
     MQTT_CLIENT_INSTANCE.on_connect = __on_mqtt_connect
-    MQTT_CLIENT_INSTANCE.on_message = __on_message
     if broker_username is not None:
         MQTT_CLIENT_INSTANCE.username_pw_set(broker_username, broker_password)
     MQTT_CLIENT_INSTANCE.connect(broker_host, broker_port)
@@ -31,4 +43,8 @@ def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str 
 def subscribe_to_device(device_name: str, qos: int = 2):
     topic_name = topics.get_tasmota_stat_result_topic(device=device_name)
     MQTT_CLIENT_INSTANCE.subscribe(topic=topic_name, qos=qos)
-    MQTT_CLIENT_INSTANCE.message_callback_add(topic_name, __on_message)
+    MQTT_CLIENT_INSTANCE.message_callback_add(topic_name, __on_device_result_message)
+
+def get_device_stat(device_name: str, qos: int = 2):
+    topic_name = topics.get_tasmota_power_cmnd_topic(device=device_name)
+    MQTT_CLIENT_INSTANCE.publish(topic=topic_name, qos=qos)

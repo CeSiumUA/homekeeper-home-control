@@ -3,7 +3,8 @@ from env import Env
 
 class MongoDbAccess:
 
-    
+    DEVICE_NAME_FIELD = 'device_name'
+    POWER_ON_FIELD = 'power_on'
 
     def __init__(self) -> None:
         self.__mongo_url = Env.get_mongo_connection_url()
@@ -41,4 +42,8 @@ class MongoDbAccess:
         
     def get_devices(self):
         devices_collection = self.__get_devices_collection()
-        return devices_collection.find({}, {'device_name': 1})
+        return devices_collection.find({}, {self.DEVICE_NAME_FIELD: 1})
+    
+    def update_device_stat(self, device_name: str, power_on: bool):
+        devices_collection = self.__get_devices_collection()
+        devices_collection.update_one({self.DEVICE_NAME_FIELD: device_name}, {"$set": {self.POWER_ON_FIELD: power_on}})

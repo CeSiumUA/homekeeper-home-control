@@ -23,7 +23,8 @@ if __name__ == '__main__':
             mqttmodule.subscribe_to_device(device_name=device_name)
             logging.info(f"subscribed to device: {device_name}")
 
-    scheduler.add_job(devicestat.get_devices_stat, 'interval', minutes=20, start_date=datetime.datetime.now())
+    stats_run_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
+    scheduler.add_job(devicestat.get_devices_stat, 'interval', minutes=20, start_date=stats_run_time)
 
     try:
         logging.info("Scheduler started. Press Ctrl+C to exit.")

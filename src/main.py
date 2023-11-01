@@ -4,7 +4,7 @@ from env import Env
 from dbaccess import MongoDbAccess
 import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
-import devicestat
+import devices
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
@@ -24,7 +24,7 @@ if __name__ == '__main__':
             logging.info(f"subscribed to device: {device_name}")
 
     stats_run_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
-    scheduler.add_job(devicestat.get_devices_stat, 'interval', minutes=20, start_date=stats_run_time)
+    scheduler.add_job(devices.get_devices_stat, 'interval', minutes=20, start_date=stats_run_time)
 
     try:
         logging.info("Scheduler started. Press Ctrl+C to exit.")

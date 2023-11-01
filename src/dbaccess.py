@@ -83,4 +83,32 @@ class MongoDbAccess:
         devices_collection = self.__get_devices_collection()
         return devices_collection.find({"paired_devices": {"$in": [mobile_device]}})
     
-    def get_devices_with_active_pair(self, )
+    def get_devices_with_active_pair(self):
+        devices_collection = self.__get_devices_collection()
+
+        pipeline = [
+            {
+                "$unwind": "$paired_devices"
+            },
+            {
+                "$lookup": {
+                    "from": "mobile_devices",
+                    "localField": "paired_devices",
+                    "foreignField": "mobile_device_name",
+                    "as": "mobile_device"
+                }
+            },
+            {
+                "$match": {
+                    "mobile_device.is_connected": True
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "device": {"$first": "$$ROOT"}
+                }
+            }
+        ]
+
+        return devices_collection.aggregate(pipeline)

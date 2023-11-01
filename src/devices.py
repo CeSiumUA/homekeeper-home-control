@@ -13,29 +13,33 @@ def get_devices_stat():
             logging.info(f'getting stat from: {device_name}')
             mqttmodule.get_device_stat(device_name=device_name)
 
+def device_state_machine():
+    with MongoDbAccess() as mongo_client:
+        for device in mongo_client.get_devices_with_active_pair():
+            device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
+            is_dark = device[MongoDbAccess.DEVICE_IS_DARK_FIELD]
+            is_power_on = device[MongoDbAccess.DEVICE_POWER_ON_FIELD]
+            is_sleep = device[MongoDbAccess.DEVICE_IS_DEVICE_SLEEP]
+
+            logging.info(f"states of {device_name}: dark - {is_dark}, powered - {is_power_on}, sleep - {is_sleep}")
+
+            if is_dark:
+                if is_power_on:
+                    if is_sleep:
+                        logging.info(f"device {device_name}: turning off, according to sleep mode, previously powered and darkness")
+                        mqttmodule.send_device_toggle(device_name=device_name)
+                else:
+                    if not is_sleep:
+                        logging.info(f"device {device_name}: turning on, according to previously not powered and darkness")
+                        mqttmodule.send_device_toggle(device_name=device_name)
+            else:
+                if is_power_on:
+                    logging.info(f"device {device_name}: turning off, according to previously powered and daylight")
+                    mqttmodule.send_device_toggle(device_name=device_name)
+
 def device_connect_disconnect_handler(mobile_device_name: str, is_connected: bool):
     with MongoDbAccess() as mongo_client:
-
         mongo_client.update_mobile_device_stat(mobile_device_name, is_connected)
-
-        for device in mongo_client.get_paired_devices(mobile_device=mobile_device_name):
-            switch_interval = device[MongoDbAccess.DEVICE_SWITCH_INTERVAL_FIELD]
-            last_switch = device[MongoDbAccess.DEVICE_LAST_SWITCH_FIELD]
-            is_device_powered = device[MongoDbAccess.DEVICE_POWER_ON_FIELD]
-            is_device_dark = device[MongoDbAccess.DEVICE_IS_DARK_FIELD]
-
-            if datetime.datetime.now() < last_switch + datetime.timedelta(minutes=switch_interval):
-                continue
-            elif is_connected and (is_device_powered or not is_device_dark):
-                continue
-            elif not is_connected and not is_device_powered:
-                continue
-            elif not is_connected and is_device_powered:
-                # to be added
-                pass
-            elif is_connected and not is_device_powered and is_device_dark:
-                # to be added
-                pass
 
 
 def time_event_handler(event: DailyEvent):

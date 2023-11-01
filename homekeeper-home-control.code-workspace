@@ -6,9 +6,11 @@
 	],
 	"settings": {
 		"cSpell.words": [
+			"apscheduler",
 			"cmnd",
 			"dailyevents",
 			"dbaccess",
+			"devicestat",
 			"HOMEKEEPER",
 			"levelname",
 			"MQTT",

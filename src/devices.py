@@ -13,10 +13,40 @@ def get_devices_stat():
             logging.info(f'getting stat from: {device_name}')
             mqttmodule.get_device_stat(device_name=device_name)
 
+def toggle_device(mongo_client: MongoDbAccess, device):
+    device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
+
+    if MongoDbAccess.DEVICE_SWITCH_INTERVAL_FIELD not in device:
+        interval = 300
+    else:
+        interval = device[MongoDbAccess.DEVICE_SWITCH_INTERVAL_FIELD]
+
+    if MongoDbAccess.DEVICE_LAST_SWITCH_FIELD not in device:
+        last_switch = datetime.datetime.min
+    else:
+        last_switch = device[MongoDbAccess.DEVICE_LAST_SWITCH_FIELD]
+
+    current_time = datetime.datetime.now()
+
+    if last_switch + datetime.timedelta(seconds=interval) > current_time:
+        logging.info(f"too small interval for {device_name}, device interval is: {interval}")
+        return
+    
+    last_switch = current_time
+
+    mongo_client.update_device_switch_time(device_name=device_name, last_switch=last_switch)
+
+    logging.info(f"last switch time updated for {device_name}")
+
+    mqttmodule.send_device_toggle(device_name=device_name)
+
+    logging.info(f"MQTT signal sent to {device_name}")
+
 def device_state_machine():
     logging.info("entering devices state machine")
     with MongoDbAccess() as mongo_client:
-        for device in mongo_client.get_devices_with_active_pair():
+        for device_group in mongo_client.get_devices_with_active_pair():
+            device = device_group['device']
             device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
             is_dark = device[MongoDbAccess.DEVICE_IS_DARK_FIELD]
             is_power_on = device[MongoDbAccess.DEVICE_POWER_ON_FIELD]
@@ -28,15 +58,15 @@ def device_state_machine():
                 if is_power_on:
                     if is_sleep:
                         logging.info(f"device {device_name}: turning off, according to sleep mode, previously powered and darkness")
-                        mqttmodule.send_device_toggle(device_name=device_name)
+                        toggle_device(mongo_client=mongo_client, device=device)
                 else:
                     if not is_sleep:
                         logging.info(f"device {device_name}: turning on, according to previously not powered and darkness")
-                        mqttmodule.send_device_toggle(device_name=device_name)
+                        toggle_device(mongo_client=mongo_client, device=device)
             else:
                 if is_power_on:
                     logging.info(f"device {device_name}: turning off, according to previously powered and daylight")
-                    mqttmodule.send_device_toggle(device_name=device_name)
+                    toggle_device(mongo_client=mongo_client, device=device)
 
 def device_connect_disconnect_handler(mobile_device_name: str, is_connected: bool):
     logging.info(f"updating mobile device ({mobile_device_name}) state (connected: {is_connected})")

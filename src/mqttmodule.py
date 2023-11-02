@@ -43,7 +43,7 @@ def __on_device_result_message(client: mqtt_client.Client, userdata, msg):
     logging.info(f"got device state on topic: {msg.topic}, is power on: {is_power_on}, device name: {device_name}")
 
     with MongoDbAccess() as mongo_client:
-        mongo_client.update_device_stat(device_name=device_name, power_on=is_power_on)
+        mongo_client.update_device_power_on(device_name=device_name, power_on=is_power_on)
 
 def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str | None = None, broker_password: str | None = None):
     global MQTT_CLIENT_INSTANCE

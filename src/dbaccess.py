@@ -1,5 +1,6 @@
 import pymongo
 from env import Env
+import datetime
 
 class MongoDbAccess:
 
@@ -71,9 +72,13 @@ class MongoDbAccess:
         devices_collection = self.__get_devices_collection()
         return devices_collection.find({})
     
-    def update_device_stat(self, device_name: str, power_on: bool):
+    def update_device_power_on(self, device_name: str, power_on: bool):
         devices_collection = self.__get_devices_collection()
         devices_collection.update_one({self.DEVICE_NAME_FIELD: device_name}, {"$set": {self.DEVICE_POWER_ON_FIELD: power_on}})
+    
+    def update_device_switch_time(self, device_name: str, last_switch: datetime.datetime):
+        devices_collection = self.__get_devices_collection()
+        devices_collection.update_one({self.DEVICE_NAME_FIELD: device_name}, {"$set": {self.DEVICE_LAST_SWITCH_FIELD: last_switch}})
 
     def update_mobile_device_stat(self, device_name: str, is_connected: bool):
         mobile_devices_connection = self.__get_mobilde_devices_collection()

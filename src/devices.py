@@ -14,6 +14,7 @@ def get_devices_stat():
             mqttmodule.get_device_stat(device_name=device_name)
 
 def device_state_machine():
+    logging.info("entering devices state machine")
     with MongoDbAccess() as mongo_client:
         for device in mongo_client.get_devices_with_active_pair():
             device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
@@ -38,11 +39,15 @@ def device_state_machine():
                     mqttmodule.send_device_toggle(device_name=device_name)
 
 def device_connect_disconnect_handler(mobile_device_name: str, is_connected: bool):
+    logging.info(f"updating mobile device ({mobile_device_name}) state (connected: {is_connected})")
     with MongoDbAccess() as mongo_client:
         mongo_client.update_mobile_device_stat(mobile_device_name, is_connected)
+    logging.info("mobile devices states updated")
+    device_state_machine()
 
 
 def time_event_handler(event: DailyEvent):
+    logging.info(f"updating devices state: {event}")
     # temporary
     if event == DailyEvent.CUSTOM_TIME:
         logging.info("there is still no handler for custom time.... need to think how it could be used in future...")
@@ -55,3 +60,5 @@ def time_event_handler(event: DailyEvent):
         else:
             logging.info(f"unknown event type: {event}")
             return
+    logging.info(f"devices state update finished")
+    device_state_machine()

@@ -91,16 +91,16 @@ def get_device_stat(device_name: str, qos: int = 2):
     MQTT_CLIENT_INSTANCE.publish(topic=topic_name, qos=qos)
 
 def send_device_toggle(device_name: str, qos: int = 2, state: bool | None = None):
+    if state is None:
+        command = TASMOTA_DEVICE_TOGGLE_COMMAND
+    else:
+        command = TASMOTA_DEVICE_ON_COMMAND if state else TASMOTA_DEVICE_OFF_COMMAND
     # temporary
     if Env.get_publish_to_tg():
         logging.info("publishing to tg...")
-        MQTT_CLIENT_INSTANCE.publish(topic=topics.SEND_MESSAGE, payload=f"device {device_name} should be toggled now!")
+        MQTT_CLIENT_INSTANCE.publish(topic=topics.SEND_MESSAGE, payload=f"device {device_name} should be {command} now!")
 
     if Env.get_publish_to_tasmota():
         publish_topic = topics.get_tasmota_power_cmnd_topic(device=device_name)
-        if state is None:
-            command = TASMOTA_DEVICE_TOGGLE_COMMAND
-        else:
-            command = TASMOTA_DEVICE_ON_COMMAND if state else TASMOTA_DEVICE_OFF_COMMAND
         logging.info(f"publishing to tasmota device on topic {publish_topic}, command: {command}")
         MQTT_CLIENT_INSTANCE.publish(publish_topic, command)

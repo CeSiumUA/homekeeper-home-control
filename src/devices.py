@@ -13,7 +13,7 @@ def get_devices_stat():
             logging.info(f'getting stat from: {device_name}')
             mqttmodule.get_device_stat(device_name=device_name)
 
-def toggle_device(mongo_client: MongoDbAccess, device):
+def toggle_device(mongo_client: MongoDbAccess, device, state: bool):
     device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
 
     if MongoDbAccess.DEVICE_SWITCH_INTERVAL_FIELD not in device:
@@ -38,7 +38,7 @@ def toggle_device(mongo_client: MongoDbAccess, device):
 
     logging.info(f"last switch time updated for {device_name}")
 
-    mqttmodule.send_device_toggle(device_name=device_name)
+    mqttmodule.send_device_toggle(device_name=device_name, state=state)
 
     logging.info(f"MQTT signal sent to {device_name}")
 
@@ -58,15 +58,15 @@ def device_state_machine():
                 if is_power_on:
                     if is_sleep:
                         logging.info(f"device {device_name}: turning off, according to sleep mode, previously powered and darkness")
-                        toggle_device(mongo_client=mongo_client, device=device)
+                        toggle_device(mongo_client=mongo_client, device=device, state=False)
                 else:
                     if not is_sleep:
                         logging.info(f"device {device_name}: turning on, according to previously not powered and darkness")
-                        toggle_device(mongo_client=mongo_client, device=device)
+                        toggle_device(mongo_client=mongo_client, device=device, state=True)
             else:
                 if is_power_on:
                     logging.info(f"device {device_name}: turning off, according to previously powered and daylight")
-                    toggle_device(mongo_client=mongo_client, device=device)
+                    toggle_device(mongo_client=mongo_client, device=device, state=False)
 
 def device_connect_disconnect_handler(mobile_device_name: str, is_connected: bool):
     logging.info(f"updating mobile device ({mobile_device_name}) state (connected: {is_connected})")
@@ -75,6 +75,9 @@ def device_connect_disconnect_handler(mobile_device_name: str, is_connected: boo
     logging.info("mobile devices states updated")
     device_state_machine()
 
+def device_direct_command_handler(device_name: str, state: bool):
+    with MongoDbAccess() as mongo_client:
+        toggle_device(mongo_client=mongo_client, state=state)
 
 def time_event_handler(event: DailyEvent):
     logging.info(f"updating devices state: {event}")

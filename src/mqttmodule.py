@@ -8,7 +8,9 @@ from dbaccess import MongoDbAccess
 import json
 import devices
 
-TASMOTA_DEVICE_TOGGLE_COMMAND = 'TOGGLE'
+TASMOTA_DEVICE_TOGGLE_COMMAND = 'toggle'
+TASMOTA_DEVICE_ON_COMMAND = 'on'
+TASMOTA_DEVICE_OFF_COMMAND = 'off'
 
 def __on_mqtt_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -31,6 +33,16 @@ def __timing_event(client: mqtt_client.Client, userdata, msg):
     logging.info(f"timing event: {event.name}")
 
     devices.time_event_handler(event)
+
+def __device_toggle_command(client: mqtt_client.Client, userdata, msg):
+    payload = json.loads(msg.payload.decode())
+
+    device_name = payload['device_name']
+    state = payload['state']
+
+    logging.info(f"command to set device {device_name} to powered: {state}")
+
+    devices.device_direct_command_handler(device_name=device_name, state=state)
 
 def __on_device_result_message(client: mqtt_client.Client, userdata, msg):
     segments = msg.topic.split('/')
@@ -64,6 +76,9 @@ def start_mqtt_client(broker_host: str, broker_port: int, broker_username : str 
     MQTT_CLIENT_INSTANCE.subscribe(topic=topics.TIMING_EVENT, qos=2)
     MQTT_CLIENT_INSTANCE.message_callback_add(topics.TIMING_EVENT, __timing_event)
 
+    MQTT_CLIENT_INSTANCE.subscribe(topic=topics.DEVICE_TOGGLE, qos=2)
+    MQTT_CLIENT_INSTANCE.message_callback_add(topics.DEVICE_TOGGLE, __device_toggle_command)
+
     MQTT_CLIENT_INSTANCE.loop_start()
 
 def subscribe_to_device(device_name: str, qos: int = 2):
@@ -75,13 +90,17 @@ def get_device_stat(device_name: str, qos: int = 2):
     topic_name = topics.get_tasmota_power_cmnd_topic(device=device_name)
     MQTT_CLIENT_INSTANCE.publish(topic=topic_name, qos=qos)
 
-def send_device_toggle(device_name: str, qos: int = 2):
+def send_device_toggle(device_name: str, qos: int = 2, state: bool | None = None):
     # temporary
     if Env.get_publish_to_tg():
         logging.info("publishing to tg...")
         MQTT_CLIENT_INSTANCE.publish(topic=topics.SEND_MESSAGE, payload=f"device {device_name} should be toggled now!")
 
     if Env.get_publish_to_tasmota():
-        logging.info("publishing to tasmota...")
         publish_topic = topics.get_tasmota_power_cmnd_topic(device=device_name)
-        MQTT_CLIENT_INSTANCE.publish(publish_topic, TASMOTA_DEVICE_TOGGLE_COMMAND)
+        if state is None:
+            command = TASMOTA_DEVICE_TOGGLE_COMMAND
+        else:
+            command = TASMOTA_DEVICE_ON_COMMAND if state else TASMOTA_DEVICE_OFF_COMMAND
+        logging.info(f"publishing to tasmota device on topic {publish_topic}, command: {command}")
+        MQTT_CLIENT_INSTANCE.publish(publish_topic, command)

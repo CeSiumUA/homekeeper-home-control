@@ -72,6 +72,10 @@ class MongoDbAccess:
         devices_collection = self.__get_devices_collection()
         return devices_collection.find({})
     
+    def get_device_by_name(self, device_name: str):
+        devices_collection = self.__get_devices_collection()
+        return devices_collection.find_one({self.DEVICE_NAME_FIELD: device_name})
+    
     def update_device_power_on(self, device_name: str, power_on: bool):
         devices_collection = self.__get_devices_collection()
         devices_collection.update_one({self.DEVICE_NAME_FIELD: device_name}, {"$set": {self.DEVICE_POWER_ON_FIELD: power_on}})

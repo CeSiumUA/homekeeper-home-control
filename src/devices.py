@@ -77,7 +77,11 @@ def device_connect_disconnect_handler(mobile_device_name: str, is_connected: boo
 
 def device_direct_command_handler(device_name: str, state: bool):
     with MongoDbAccess() as mongo_client:
-        toggle_device(mongo_client=mongo_client, state=state)
+        device = mongo_client.get_device_by_name(device_name=device_name)
+        if device is None:
+            logging.info(f"device {device_name} not found")
+            return
+        toggle_device(mongo_client=mongo_client, state=state, device=device)
 
 def time_event_handler(event: DailyEvent):
     logging.info(f"updating devices state: {event}")

@@ -15,7 +15,7 @@ def __on_mqtt_connect(client, userdata, flags, rc):
         logging.fatal("Failed to connect to MQTT, return code: %d\n", rc)
 
 def __device_connect_disconnect(client: mqtt_client.Client, userdata, msg):
-    payload = msg.payload.decode()
+    payload = json.loads(msg.payload.decode())
     mobile_device_name = payload['mobile_device']
     state = bool(payload['state'])
 

@@ -9,6 +9,8 @@ class Env:
     MONGO_HOMEKEEPER_DB = "MONGO_HOMEKEEPER_DB"
     MONGO_DEVICES_COLL = "MONGO_DEVICES_COLL"
     MONGO_MOBILE_DEVICES_COLL = "MONGO_MOBILE_DEVICES_COLL"
+    PUBLISH_TO_TG = "PUBLISH_TO_TG"
+    PUBLISH_TO_TASMOTA = "PUBLISH_TO_TASMOTA"
 
     def get_mqtt_connection_params():
         broker_host = environ.get(Env.MQTT_HOST)
@@ -35,3 +37,19 @@ class Env:
     
     def get_mongo_mobile_devices_coll_name():
         return environ.get(Env.MONGO_MOBILE_DEVICES_COLL)
+    
+    def get_publish_to_tg():
+        publish_to_tg = environ.get(Env.PUBLISH_TO_TG)
+
+        if publish_to_tg is None:
+            return False
+        
+        return int(publish_to_tg) == 1
+    
+    def get_publish_to_tasmota():
+        publish_to_tasmota = environ.get(Env.PUBLISH_TO_TASMOTA)
+
+        if publish_to_tasmota is None:
+            return False
+        
+        return int(publish_to_tasmota) == 1

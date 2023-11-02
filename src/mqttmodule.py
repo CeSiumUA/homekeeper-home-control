@@ -8,6 +8,8 @@ from dbaccess import MongoDbAccess
 import json
 import devices
 
+TASMOTA_DEVICE_TOGGLE_COMMAND = 'TOGGLE'
+
 def __on_mqtt_connect(client, userdata, flags, rc):
     if rc == 0:
         logging.info("Connected to MQTT")
@@ -74,5 +76,10 @@ def get_device_stat(device_name: str, qos: int = 2):
     MQTT_CLIENT_INSTANCE.publish(topic=topic_name, qos=qos)
 
 def send_device_toggle(device_name: str, qos: int = 2):
-    #temporary
-    MQTT_CLIENT_INSTANCE.publish(topic=topics.SEND_MESSAGE, payload=f"device {device_name} should be toggled now!")
+    # temporary
+    if Env.get_publish_to_tg():
+        MQTT_CLIENT_INSTANCE.publish(topic=topics.SEND_MESSAGE, payload=f"device {device_name} should be toggled now!")
+
+    if Env.get_publish_to_tasmota():
+        publish_topic = topics.get_tasmota_power_cmnd_topic(device=device_name)
+        MQTT_CLIENT_INSTANCE.publish(publish_topic, TASMOTA_DEVICE_TOGGLE_COMMAND)

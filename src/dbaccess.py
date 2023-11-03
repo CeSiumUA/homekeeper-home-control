@@ -92,32 +92,84 @@ class MongoDbAccess:
         devices_collection = self.__get_devices_collection()
         return devices_collection.find({"paired_devices": {"$in": [mobile_device]}})
     
-    def get_devices_with_active_pair(self):
+    def get_devices_with_mobile_pair(self, is_active: bool):
         devices_collection = self.__get_devices_collection()
 
-        pipeline = [
-            {
-                "$unwind": "$paired_devices"
-            },
-            {
-                "$lookup": {
-                    "from": "mobile_devices",
-                    "localField": "paired_devices",
-                    "foreignField": "mobile_device_name",
-                    "as": "mobile_device"
+        if is_active:
+            pipeline = [
+                {
+                    "$unwind": "$paired_devices"
+                },
+                {
+                    "$lookup": {
+                        "from": "mobile_devices",
+                        "localField": "paired_devices",
+                        "foreignField": "mobile_device_name",
+                        "as": "mobile_device"
+                    }
+                },
+                {
+                    "$match": {
+                        "mobile_device.is_connected": True
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": "$_id",
+                        "device": {"$first": "$$ROOT"}
+                    }
                 }
-            },
-            {
-                "$match": {
-                    "mobile_device.is_connected": True
+            ]
+        else:
+            pipeline = [
+                {
+                    "$unwind": "$paired_devices"
+                },
+                {
+                    "$lookup": {
+                        "from": "mobile_devices",
+                        "localField": "paired_devices",
+                        "foreignField": "mobile_device_name",
+                        "as": "mobile_device"
+                    }
+                },
+                {
+                    "$match": {
+                        "mobile_device.is_connected": False
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": "$_id",
+                        "device": {"$first": "$$ROOT"}
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "mobile_devices",
+                        "localField": "device.paired_devices",
+                        "foreignField": "mobile_device_name",
+                        "as": "mobile_devices"
+                    }
+                },
+                {
+                    "$match": {
+                        "$expr": {
+                            "$eq": [
+                                {
+                                    "$size": {
+                                        "$filter": {
+                                            "input": "$mobile_devices",
+                                            "cond": {
+                                                "$eq": ["$$this.is_connected", False]
+                                            }
+                                        }
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    }
                 }
-            },
-            {
-                "$group": {
-                    "_id": "$_id",
-                    "device": {"$first": "$$ROOT"}
-                }
-            }
-        ]
-
+            ]
         return devices_collection.aggregate(pipeline)

@@ -76,7 +76,7 @@ def device_connect_disconnect_handler(mobile_device_name: str, is_connected: boo
     with MongoDbAccess() as mongo_client:
         mongo_client.update_mobile_device_stat(mobile_device_name, is_connected)
     logging.info("mobile devices states updated")
-    process_device_states(mobile_device_name)
+    process_device_states(is_connected)
 
 def device_direct_command_handler(device_name: str, state: bool):
     with MongoDbAccess() as mongo_client:

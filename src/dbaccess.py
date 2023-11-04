@@ -123,52 +123,28 @@ class MongoDbAccess:
         else:
             pipeline = [
                 {
-                    "$unwind": "$paired_devices"
-                },
-                {
                     "$lookup": {
                         "from": "mobile_devices",
                         "localField": "paired_devices",
-                        "foreignField": "mobile_device_name",
-                        "as": "mobile_device"
-                    }
-                },
-                {
-                    "$match": {
-                        "mobile_device.is_connected": False
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": "$_id",
-                        "device": {"$first": "$$ROOT"}
-                    }
-                },
-                {
-                    "$lookup": {
-                        "from": "mobile_devices",
-                        "localField": "device.paired_devices",
                         "foreignField": "mobile_device_name",
                         "as": "mobile_devices"
                     }
                 },
                 {
                     "$match": {
-                        "$expr": {
-                            "$eq": [
-                                {
-                                    "$size": {
-                                        "$filter": {
-                                            "input": "$mobile_devices",
-                                            "cond": {
-                                                "$eq": ["$$this.is_connected", False]
-                                            }
-                                        }
-                                    }
-                                },
-                                0
-                            ]
-                        }
+                        "mobile_devices.is_connected": False
+                    }
+                },
+                {
+                    "$project": {
+                        "paired_devices": 1,
+                        "mobile_devices": 1,
+                        "mobile_devices_size": { "$size": "$mobile_devices" }
+                    }
+                },
+                {
+                    "$match": {
+                        "$expr": { "$eq": ["$mobile_devices_size", { "$size": { "$filter": { "input": "$mobile_devices", "cond": { "$eq": ["$$this.is_connected", False] } } } }] }
                     }
                 }
             ]

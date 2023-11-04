@@ -44,11 +44,25 @@ def toggle_device(mongo_client: MongoDbAccess, device, state: bool):
 
 def process_device_states(get_active_devices: bool = True):
     with MongoDbAccess() as mongo_client:
-        for device_group in mongo_client.get_devices_with_mobile_pair(get_active_devices):
-            device = device_group['device']
-            device_state_machine(mongo_client=mongo_client, device=device)
+        if get_active_devices:
+            for device_group in mongo_client.get_devices_with_mobile_pair():
+                device = device_group['device']
+                device_state_machine(mongo_client=mongo_client, device=device)
+        else:
+            offline_mobile_devices = list(mongo_client.get_offline_mobile_devices())
+            projected_offline_devices = [md[MongoDbAccess.MOBILE_DEVICE_NAME_FIELD] for md in offline_mobile_devices]
+            logging.info(f"got offline devices: {projected_offline_devices}")
+            for device in mongo_client.get_paired_devices(projected_offline_devices):
+                logging.info(f"processing device: {device}")
+                device_mobile_devices = device[MongoDbAccess.DEVICE_PAIRED_DEVICES_FIELD]
+                are_all_mobile_devices_offline = all(md in projected_offline_devices for md in device_mobile_devices)
+                if are_all_mobile_devices_offline:
+                    device_state_machine(mongo_client=mongo_client, device=device, forced_shutdown=True)
+                else:
+                    logging.info("device has still some mobiles connected to network")
 
-def device_state_machine(mongo_client, device):
+
+def device_state_machine(mongo_client, device, forced_shutdown: bool = False):
     logging.info("entering devices state machine")
     device_name = device[MongoDbAccess.DEVICE_NAME_FIELD]
     is_dark = device[MongoDbAccess.DEVICE_IS_DARK_FIELD]
@@ -56,6 +70,11 @@ def device_state_machine(mongo_client, device):
     is_sleep = device[MongoDbAccess.DEVICE_IS_DEVICE_SLEEP]
 
     logging.info(f"states of {device_name}: dark - {is_dark}, powered - {is_power_on}, sleep - {is_sleep}")
+
+    if forced_shutdown:
+        logging.info(f"forcing {device_name} to power off")
+        toggle_device(mongo_client=mongo_client, device=device, state=False)
+        return
 
     if is_dark:
         if is_power_on:

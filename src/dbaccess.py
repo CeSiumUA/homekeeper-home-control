@@ -88,64 +88,40 @@ class MongoDbAccess:
         mobile_devices_connection = self.__get_mobilde_devices_collection()
         mobile_devices_connection.update_one({self.MOBILE_DEVICE_NAME_FIELD: device_name}, {"$set": {self.MOBILE_DEVICE_IS_CONNECTED: is_connected}})
 
-    def get_paired_devices(self, mobile_device: str):
-        devices_collection = self.__get_devices_collection()
-        return devices_collection.find({"paired_devices": {"$in": [mobile_device]}})
-    
-    def get_devices_with_mobile_pair(self, is_active: bool):
+    def get_paired_devices(self, mobile_devices):
         devices_collection = self.__get_devices_collection()
 
-        if is_active:
-            pipeline = [
-                {
-                    "$unwind": "$paired_devices"
-                },
-                {
-                    "$lookup": {
-                        "from": "mobile_devices",
-                        "localField": "paired_devices",
-                        "foreignField": "mobile_device_name",
-                        "as": "mobile_device"
-                    }
-                },
-                {
-                    "$match": {
-                        "mobile_device.is_connected": True
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": "$_id",
-                        "device": {"$first": "$$ROOT"}
-                    }
+        return devices_collection.find({"paired_devices": {"$in": mobile_devices}})
+    
+    def get_offline_mobile_devices(self):
+        mobile_devices_collection = self.__get_mobilde_devices_collection()
+        return mobile_devices_collection.find({"is_connected": False})
+    
+    def get_devices_with_mobile_pair(self):
+        devices_collection = self.__get_devices_collection()
+
+        pipeline = [
+            {
+                "$unwind": "$paired_devices"
+            },
+            {
+                "$lookup": {
+                    "from": "mobile_devices",
+                    "localField": "paired_devices",
+                    "foreignField": "mobile_device_name",
+                    "as": "mobile_device"
                 }
-            ]
-        else:
-            pipeline = [
-                {
-                    "$lookup": {
-                        "from": "mobile_devices",
-                        "localField": "paired_devices",
-                        "foreignField": "mobile_device_name",
-                        "as": "mobile_devices"
-                    }
-                },
-                {
-                    "$match": {
-                        "mobile_devices.is_connected": False
-                    }
-                },
-                {
-                    "$project": {
-                        "paired_devices": 1,
-                        "mobile_devices": 1,
-                        "mobile_devices_size": { "$size": "$mobile_devices" }
-                    }
-                },
-                {
-                    "$match": {
-                        "$expr": { "$eq": ["$mobile_devices_size", { "$size": { "$filter": { "input": "$mobile_devices", "cond": { "$eq": ["$$this.is_connected", False] } } } }] }
-                    }
+            },
+            {
+                "$match": {
+                    "mobile_device.is_connected": True
                 }
-            ]
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "device": {"$first": "$$ROOT"}
+                }
+            }
+        ]
         return devices_collection.aggregate(pipeline)

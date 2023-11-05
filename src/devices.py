@@ -71,7 +71,7 @@ def device_state_machine(mongo_client, device, forced_shutdown: bool = False):
 
     logging.info(f"states of {device_name}: dark - {is_dark}, powered - {is_power_on}, sleep - {is_sleep}")
 
-    if forced_shutdown:
+    if forced_shutdown and is_power_on:
         logging.info(f"forcing {device_name} to power off")
         toggle_device(mongo_client=mongo_client, device=device, state=False)
         return

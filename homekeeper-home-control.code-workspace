@@ -10,15 +10,22 @@
 			"cmnd",
 			"dailyevents",
 			"dbaccess",
+			"devicesmanager",
 			"devicestat",
+			"devicestatemachine",
 			"HOMEKEEPER",
 			"levelname",
 			"MQTT",
+			"mqttmanager",
 			"mqttmodule",
+			"netwatcher",
 			"paho",
 			"pymongo",
+			"statemachines",
 			"TASMOTA",
-			"userdata"
+			"tlbot",
+			"userdata",
+			"ytdownload"
 		]
 	}
 }

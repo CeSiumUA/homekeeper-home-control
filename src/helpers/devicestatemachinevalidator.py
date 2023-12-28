@@ -73,7 +73,7 @@ class DeviceSwitchSleepValidator(DeviceSwitchTimeValidator):
 class DeviceSwitchColdValidator(DeviceSwitchSleepValidator):
 
     DEVICE_COLD_THRESHOLD = 25
-    DEVICE_OVERHEATING_THRESHOLD = 35
+    DEVICE_OVERHEATING_THRESHOLD = 38
 
     def __init__(self, device, logger: Logger | None = None) -> None:
         self.temperature = device[MongoDbAccess.DEVICE_TEMPERATURE_FIELD]

@@ -163,7 +163,7 @@ class TlBot(TelegramMessageSenderInterface):
         if MongoDbAccess.DEVICE_TYPE_FIELD in stored_device:
             reply_text += f'Device type: {stored_device[MongoDbAccess.DEVICE_TYPE_FIELD]}\n'
         if MongoDbAccess.DEVICE_TEMPERATURE_FIELD in stored_device:
-            reply_text += f'Device temperature: {MongoDbAccess.DEVICE_TEMPERATURE_FIELD}\n'
+            reply_text += f'Device temperature: {stored_device[MongoDbAccess.DEVICE_TEMPERATURE_FIELD]}\n'
         if MongoDbAccess.DEVICE_IS_POWER_FORCED_FIELD in stored_device:
             if stored_device[MongoDbAccess.DEVICE_IS_POWER_FORCED_FIELD]:
                 reply_text += 'Device is in power forced state\n'

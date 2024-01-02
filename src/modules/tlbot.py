@@ -153,24 +153,27 @@ class TlBot(TelegramMessageSenderInterface):
 
         reply_text = 'Device stats:\n'
         if MongoDbAccess.DEVICE_NAME_FIELD in stored_device:
-            reply_text += f'Device name: {stored_device[MongoDbAccess.DEVICE_NAME_FIELD]}\n'
+            reply_text += f'📛 Device name: {stored_device[MongoDbAccess.DEVICE_NAME_FIELD]}\n'
+        if MongoDbAccess.DEVICE_POWER_ON_FIELD in stored_device:
+            is_power_on = 'Yes' if stored_device[MongoDbAccess.DEVICE_POWER_ON_FIELD] else 'No'
+            reply_text += f'⚡ Is device powered: {is_power_on}\n'
         if MongoDbAccess.DEVICE_IS_DARK_FIELD in stored_device:
             is_dark = 'Yes' if stored_device[MongoDbAccess.DEVICE_IS_DARK_FIELD] else 'No'
-            reply_text += f'Is device in dark: {is_dark}\n'
+            reply_text += f'🌙 Is device in dark: {is_dark}\n'
         if MongoDbAccess.DEVICE_IS_DEVICE_SLEEP in stored_device:
             is_sleep = 'Yes' if stored_device[MongoDbAccess.DEVICE_IS_DEVICE_SLEEP] else 'No'
-            reply_text += f'Is device sleep: {is_sleep}\n'
+            reply_text += f'😴 Is device sleep: {is_sleep}\n'
         if MongoDbAccess.DEVICE_TYPE_FIELD in stored_device:
-            reply_text += f'Device type: {stored_device[MongoDbAccess.DEVICE_TYPE_FIELD]}\n'
+            reply_text += f'❔ Device type: {stored_device[MongoDbAccess.DEVICE_TYPE_FIELD]}\n'
         if MongoDbAccess.DEVICE_TEMPERATURE_FIELD in stored_device:
-            reply_text += f'Device temperature: {stored_device[MongoDbAccess.DEVICE_TEMPERATURE_FIELD]}\n'
+            reply_text += f'🌡️ Device temperature: {stored_device[MongoDbAccess.DEVICE_TEMPERATURE_FIELD]}\n'
         if MongoDbAccess.DEVICE_IS_POWER_FORCED_FIELD in stored_device:
             if stored_device[MongoDbAccess.DEVICE_IS_POWER_FORCED_FIELD]:
-                reply_text += 'Device is in power forced state\n'
+                reply_text += '🔒 Device is in power forced state\n'
             else:
-                reply_text += 'Device is not power-forced\n'
+                reply_text += '🔓 Device is not power-forced\n'
         if MongoDbAccess.DEVICE_TOTAL_ENERGY_FIELD in stored_device:
-            reply_text += f'Device total energy: {stored_device[MongoDbAccess.DEVICE_TOTAL_ENERGY_FIELD]}\n'
+            reply_text += f'🔋 Device total energy: {stored_device[MongoDbAccess.DEVICE_TOTAL_ENERGY_FIELD]}\n'
 
         await query.edit_message_text(reply_text)
         return ConversationHandler.END

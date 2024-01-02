@@ -161,7 +161,7 @@ class TlBot(TelegramMessageSenderInterface):
             is_sleep = 'Yes' if stored_device[MongoDbAccess.DEVICE_IS_DEVICE_SLEEP] else 'No'
             reply_text += f'Is device sleep: {is_sleep}\n'
         if MongoDbAccess.DEVICE_TYPE_FIELD in stored_device:
-            reply_text += f'Device type: {MongoDbAccess.DEVICE_TYPE_FIELD}\n'
+            reply_text += f'Device type: {stored_device[MongoDbAccess.DEVICE_TYPE_FIELD]}\n'
         if MongoDbAccess.DEVICE_TEMPERATURE_FIELD in stored_device:
             reply_text += f'Device temperature: {MongoDbAccess.DEVICE_TEMPERATURE_FIELD}\n'
         if MongoDbAccess.DEVICE_IS_POWER_FORCED_FIELD in stored_device:
